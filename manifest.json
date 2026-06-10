@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Komoot Feed Cleanup",
-  "description": "Gain control over your Komoot feed by hiding unwanted content like sponsored posts, suggested profiles etc. Can be configured through settings.",
-  "version": "2.0",
+  "description": "Clean your Komoot feed. Hide sponsored posts, regional recommendations, curated collections, and suggested profiles via custom settings.",
+  "version": "1.0",
   "icons": {
     "48": "icons/scroll.png"
   },
