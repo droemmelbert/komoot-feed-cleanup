@@ -3,11 +3,12 @@ let hideSponsored = true;
 let hideRegional = true;
 let hideKomootCollections = true;
 let hideSuggestedProfiles = true;
+let extensionEnabled = true;
 let activeObserver = null; // Track the observer so we can disconnect it if needed
 
 const getIsHomepage = (url) => {
     try {
-        const {pathname} = new URL(url);
+        const { pathname } = new URL(url);
         // Matches: "/", "", "/de-de", "/en-us", "/fr"
         // Does NOT match: "/discover", "/de-de/discover"
         const homepagePattern = /^\/([a-z]{2}-[a-z]{2}|[a-z]{2})?\/??$/i;
@@ -39,6 +40,9 @@ browser.storage.sync.get(["hideSuggestedProfiles"]).then(settings => {
     hideSuggestedProfiles = settings.hideSuggestedProfiles ?? true;
 });
 
+browser.storage.sync.get(["extensionEnabled"]).then(settings => {
+    extensionEnabled = settings.extensionEnabled !== false; // default: true
+});
 
 let removePosts = (feedSection) => {
     const posts = feedSection.querySelectorAll('article');
@@ -47,8 +51,10 @@ let removePosts = (feedSection) => {
             if (post.querySelector('[data-test-id^="collection-activity:"]')) {
                 post.remove();
                 console.log("🛑 Removed a sponsored post.");
+                return;
             }
         }
+
         if (hideKomootCollections) {
             const headerText = post.querySelector('header')?.textContent || '';
 
@@ -65,7 +71,6 @@ let removePosts = (feedSection) => {
         }
 
         if (hideRegional) {
-            // Look for any div, or narrow it down if you want to optimize speed
             const divs = post.querySelectorAll('div');
             let isRegional = false;
 
@@ -86,6 +91,7 @@ let removePosts = (feedSection) => {
             if (isRegional) {
                 post.remove();
                 console.log("📍 Removed a regional post.");
+                return;
             }
         }
 
@@ -100,23 +106,25 @@ let removePosts = (feedSection) => {
     });
 };
 
-// This functions monitors the WHOLE page body for the feed setup
+// This function monitors the WHOLE page body for the feed setup
 let initGlobalObserver = () => {
     if (activeObserver) activeObserver.disconnect();
 
-    activeObserver = new MutationObserver((mutationsList) => {
-        // 1. Double check if we are still on the homepage (handles SPA navigation)
+    activeObserver = new MutationObserver(() => {
+        // Stop all processing if the extension is disabled
+        if (!extensionEnabled) return;
+
+        // Double check if we are still on the homepage (handles SPA navigation)
         updateSettings();
         if (!isHomepage) return;
 
-        // 2. Look for the feed section
+        // Look for the feed section
         const feedSection = document.querySelector('section[role="feed"]');
         if (feedSection) {
             removePosts(feedSection);
         }
     });
 
-    // Watch the entire document body for any structural changes
     activeObserver.observe(document.body, {
         childList: true,
         subtree: true
