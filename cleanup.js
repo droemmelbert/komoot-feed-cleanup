@@ -44,13 +44,19 @@ browser.storage.sync.get(["extensionEnabled"]).then(settings => {
     extensionEnabled = settings.extensionEnabled !== false; // default: true
 });
 
+function hidePostSafely(post) {
+    // keep node in DOM but make it invisible and non-interactive
+    post.style.display = "none";
+    post.setAttribute("data-kfc-hidden", "true"); // for debugging/undo
+}
+
 let removePosts = (feedSection) => {
     const posts = feedSection.querySelectorAll('article');
     posts.forEach(post => {
         if (hideSponsored) {
             if (post.querySelector('[data-test-id^="collection-activity:"]')) {
-                post.remove();
-                console.log("🛑 Removed a sponsored post.");
+                hidePostSafely(post);
+                console.log("Komoot Feed Cleanup Extension: Removed a sponsored post.");
                 return;
             }
         }
@@ -64,8 +70,8 @@ let removePosts = (feedSection) => {
                 headerText.toLowerCase().includes('collection par komoot');
 
             if (isKomootCollection) {
-                post.remove();
-                console.log("🗺️ Removed a Komoot editorial collection.");
+                hidePostSafely(post);
+                console.log("Komoot Feed Cleanup Extension: Removed a Komoot editorial collection.");
                 return;
             }
         }
@@ -89,8 +95,8 @@ let removePosts = (feedSection) => {
             }
 
             if (isRegional) {
-                post.remove();
-                console.log("📍 Removed a regional post.");
+                hidePostSafely(post);
+                console.log("Komoot Feed Cleanup Extension: Removed a regional post.");
                 return;
             }
         }
@@ -99,8 +105,8 @@ let removePosts = (feedSection) => {
             const isProfileSuggestion = post.querySelector('[data-test-id="user-recommendations"]');
 
             if (isProfileSuggestion) {
-                post.remove();
-                console.log("👥 Removed a suggested profiles block.");
+                hidePostSafely(post);
+                console.log("Komoot Feed Cleanup Extension: Removed a suggested profiles block.");
             }
         }
     });

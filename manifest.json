@@ -4,7 +4,7 @@
   "description": "Clean your Komoot feed. Hide sponsored posts, regional recommendations, curated collections, and suggested profiles via custom settings.",
   "version": "1.0",
   "icons": {
-    "48": "icons/broom.png"
+    "48": "icons/broom-komoot.png"
   },
   "permissions": [
     "storage"
@@ -21,7 +21,7 @@
   ],
   "action": {
     "default_icon": {
-      "48": "icons/broom.png"
+      "48": "icons/broom-komoot.png"
     },
     "default_title": "Komoot Feed Cleanup",
     "default_popup": "popup/popup.html"
