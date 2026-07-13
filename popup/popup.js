@@ -19,6 +19,18 @@ function updatePowerButtonState() {
     powerButton.setAttribute("aria-pressed", String(enabled));
 }
 
+async function notifyTabsOfChange() {
+    try {
+        const tabs = await browser.tabs.query({ url: "*://*.komoot.com/*" });
+        tabs.forEach(tab => {
+            browser.tabs.sendMessage(tab.id, { action: "updateSettings" }).catch(() => {
+            });
+        });
+    } catch (e) {
+        console.error("Failed to notify tabs:", e);
+    }
+}
+
 async function loadPowerState() {
     const data = await browser.storage.sync.get("extensionEnabled");
     isExtensionEnabled = data.extensionEnabled !== false; // default: true
@@ -29,6 +41,7 @@ powerButton.addEventListener("click", async () => {
     isExtensionEnabled = !isExtensionEnabled;
     await browser.storage.sync.set({ extensionEnabled: isExtensionEnabled });
     updatePowerButtonState();
+    await notifyTabsOfChange();
 });
 
 checkboxes.forEach((checkbox) => {
@@ -38,8 +51,9 @@ checkboxes.forEach((checkbox) => {
         checkbox.checked = data[key] ?? true;
     });
 
-    checkbox.addEventListener("change", () => {
-        browser.storage.sync.set({ [key]: checkbox.checked });
+    checkbox.addEventListener("change", async () => {
+        await browser.storage.sync.set({ [key]: checkbox.checked });
+        await notifyTabsOfChange();
     });
 });
 

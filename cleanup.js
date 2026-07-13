@@ -3,6 +3,7 @@ let hideSponsored = true;
 let hideRegional = true;
 let hideKomootCollections = true;
 let hideSuggestedProfiles = true;
+let hideWhatsNew = true;
 let extensionEnabled = true;
 let activeObserver = null; // Track the observer so we can disconnect it if needed
 
@@ -23,26 +24,37 @@ let updateSettings = () => {
     isHomepage = getIsHomepage(currentURL);
 };
 
-// Retrieve user settings from storage
-browser.storage.sync.get(["hideSponsored"]).then(settings => {
-    hideSponsored = settings.hideSponsored ?? true;
-});
+function reloadExtensionSettings() {
+    return browser.storage.sync.get([
+        "hideSponsored",
+        "hideRegional",
+        "hideKomootCollections",
+        "hideSuggestedProfiles",
+        "hideWhatsNew",
+        "extensionEnabled"
+    ]).then(settings => {
+        hideSponsored = settings.hideSponsored ?? true;
+        hideRegional = settings.hideRegional ?? true;
+        hideKomootCollections = settings.hideKomootCollections ?? true;
+        hideSuggestedProfiles = settings.hideSuggestedProfiles ?? true;
+        hideWhatsNew = settings.hideWhatsNew ?? true;
+        extensionEnabled = settings.extensionEnabled !== false; // default: true
 
-browser.storage.sync.get(["hideRegional"]).then(settings => {
-    hideRegional = settings.hideRegional ?? true;
-});
-
-browser.storage.sync.get(["hideKomootCollections"]).then(settings => {
-    hideKomootCollections = settings.hideKomootCollections ?? true;
-});
-
-browser.storage.sync.get(["hideSuggestedProfiles"]).then(settings => {
-    hideSuggestedProfiles = settings.hideSuggestedProfiles ?? true;
-});
-
-browser.storage.sync.get(["extensionEnabled"]).then(settings => {
-    extensionEnabled = settings.extensionEnabled !== false; // default: true
-});
+        // If the extension is enabled and we are on the homepage, clean up instantly
+        if (extensionEnabled && isHomepage) {
+            const feedSection = document.querySelector('section[role="feed"]');
+            if (feedSection) {
+                removePosts(feedSection);
+            }
+        } else if (!extensionEnabled) {
+            // Unhide hidden posts if extension is turned off without reloading
+            document.querySelectorAll('[data-kfc-hidden="true"]').forEach(post => {
+                post.style.display = "";
+                post.removeAttribute("data-kfc-hidden");
+            });
+        }
+    });
+}
 
 function hidePostSafely(post) {
     // keep node in DOM but make it invisible and non-interactive
@@ -107,6 +119,32 @@ let removePosts = (feedSection) => {
             if (isProfileSuggestion) {
                 hidePostSafely(post);
                 console.log("Komoot Feed Cleanup Extension: Removed a suggested profiles block.");
+                return;
+            }
+        }
+
+        if (hideWhatsNew) {
+            const divs = post.querySelectorAll('div');
+            let isWhatsNew = false;
+
+            for (const div of divs) {
+                const text = div.textContent.trim().toLowerCase();
+                if (text === "what's new" ||
+                    text === "was gibt's neues" ||
+                    text === "neuigkeiten" ||
+                    text === "nouveautés" ||
+                    text === "novedades" ||
+                    text === "novità"
+                ) {
+                    isWhatsNew = true;
+                    break;
+                }
+            }
+
+            if (isWhatsNew) {
+                hidePostSafely(post);
+                console.log("Komoot Feed Cleanup Extension: Removed a 'What's New' app feature update.");
+                return;
             }
         }
     });
@@ -137,8 +175,19 @@ let initGlobalObserver = () => {
     });
 };
 
+browser.runtime.onMessage.addListener((request) => {
+    if (request.action === "updateSettings") {
+        reloadExtensionSettings();
+    }
+});
+
 // Run everything
-updateSettings();
-initGlobalObserver();
+async function initializeExtension() {
+    updateSettings();
+    await reloadExtensionSettings(); // Wait for settings to load
+    initGlobalObserver();
+}
+
+initializeExtension();
 
 console.log("✅ Komoot Feed Cleanup Extension active");
