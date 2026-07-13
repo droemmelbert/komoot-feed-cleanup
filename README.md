@@ -1,9 +1,9 @@
-komoot_feed_cleanup
+Komoot Feed Cleanup
 ====================
 
-A small Firefox extension to tailor your Komoot feed.
+A Firefox extension to adjust what you see on the home feed, with the option of only showing posts from people you follow.
 
-Features
+**Features**
 - Remove sponsored posts
 - Remove regional recommendations
 - Remove Komoot collections
@@ -11,13 +11,13 @@ Features
 - Remove challenges
 - Remove "what's new" posts
 
-Usage
+**Usage**
 - Click the extension icon and toggle the item types you want hidden.
 
-Languages
+**Languages**
 - German 🇩🇪, English 🇺🇸, French 🇫🇷, Spanish 🇪🇸, Italian 🇮🇹
 
-Privacy & License
+**Privacy & License**
 - This add-on does not collect any data.
 - Open-source, provided as-is without guarantees.
 - Licensed under GNU GPL v3. 
