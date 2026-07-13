@@ -4,14 +4,13 @@ let hideRegional = true;
 let hideKomootCollections = true;
 let hideSuggestedProfiles = true;
 let hideWhatsNew = true;
+let hideChallenges = true;
 let extensionEnabled = true;
-let activeObserver = null; // Track the observer so we can disconnect it if needed
+let activeObserver = null;
 
 const getIsHomepage = (url) => {
     try {
         const { pathname } = new URL(url);
-        // Matches: "/", "", "/de-de", "/en-us", "/fr"
-        // Does NOT match: "/discover", "/de-de/discover"
         const homepagePattern = /^\/([a-z]{2}-[a-z]{2}|[a-z]{2})?\/??$/i;
         return homepagePattern.test(pathname);
     } catch (e) {
@@ -31,6 +30,7 @@ function reloadExtensionSettings() {
         "hideKomootCollections",
         "hideSuggestedProfiles",
         "hideWhatsNew",
+        "hideChallenges",
         "extensionEnabled"
     ]).then(settings => {
         hideSponsored = settings.hideSponsored ?? true;
@@ -38,16 +38,13 @@ function reloadExtensionSettings() {
         hideKomootCollections = settings.hideKomootCollections ?? true;
         hideSuggestedProfiles = settings.hideSuggestedProfiles ?? true;
         hideWhatsNew = settings.hideWhatsNew ?? true;
-        extensionEnabled = settings.extensionEnabled !== false; // default: true
+        hideChallenges = settings.hideChallenges ?? true;
+        extensionEnabled = settings.extensionEnabled !== false;
 
-        // If the extension is enabled and we are on the homepage, clean up instantly
         if (extensionEnabled && isHomepage) {
-            const feedSection = document.querySelector('section[role="feed"]');
-            if (feedSection) {
-                removePosts(feedSection);
-            }
+            cleanHomepage(); // Clean up instantly using global scope
         } else if (!extensionEnabled) {
-            // Unhide hidden posts if extension is turned off without reloading
+            // Unhide everything (global selector naturally catches the carousel too)
             document.querySelectorAll('[data-kfc-hidden="true"]').forEach(post => {
                 post.style.display = "";
                 post.removeAttribute("data-kfc-hidden");
@@ -57,14 +54,34 @@ function reloadExtensionSettings() {
 }
 
 function hidePostSafely(post) {
-    // keep node in DOM but make it invisible and non-interactive
     post.style.display = "none";
-    post.setAttribute("data-kfc-hidden", "true"); // for debugging/undo
+    post.setAttribute("data-kfc-hidden", "true");
 }
 
-let removePosts = (feedSection) => {
+let cleanHomepage = () => {
+    // 1. Handle Challenges Carousel (checks globally on the page)
+    if (hideChallenges) {
+        const challengesCarousel = document.querySelector('[data-test-id="challenges-carousel"]');
+        if (challengesCarousel && !challengesCarousel.hasAttribute("data-kfc-hidden")) {
+            hidePostSafely(challengesCarousel);
+            console.log("Komoot Feed Cleanup Extension: Removed challenges carousel.");
+        }
+    }
+
+    // 2. Handle Feed Section Articles
+    const feedSection = document.querySelector('section[role="feed"]');
+    if (!feedSection) return;
+
     const posts = feedSection.querySelectorAll('article');
     posts.forEach(post => {
+        if (hideChallenges) {
+            if (post.querySelector('a[href*="/challenges/"]')) {
+                hidePostSafely(post);
+                console.log("Komoot Feed Cleanup Extension: Removed a challenge feed article.");
+                return;
+            }
+        }
+
         if (hideSponsored) {
             if (post.querySelector('[data-test-id^="collection-activity:"]')) {
                 hidePostSafely(post);
@@ -75,7 +92,6 @@ let removePosts = (feedSection) => {
 
         if (hideKomootCollections) {
             const headerText = post.querySelector('header')?.textContent || '';
-
             const isKomootCollection = headerText.toLowerCase().includes('von komoot') ||
                 headerText.toLowerCase().includes('by komoot') ||
                 headerText.toLowerCase().includes('colección de komoot') ||
@@ -115,7 +131,6 @@ let removePosts = (feedSection) => {
 
         if (hideSuggestedProfiles) {
             const isProfileSuggestion = post.querySelector('[data-test-id="user-recommendations"]');
-
             if (isProfileSuggestion) {
                 hidePostSafely(post);
                 console.log("Komoot Feed Cleanup Extension: Removed a suggested profiles block.");
@@ -150,23 +165,15 @@ let removePosts = (feedSection) => {
     });
 };
 
-// This function monitors the WHOLE page body for the feed setup
 let initGlobalObserver = () => {
     if (activeObserver) activeObserver.disconnect();
 
     activeObserver = new MutationObserver(() => {
-        // Stop all processing if the extension is disabled
         if (!extensionEnabled) return;
-
-        // Double check if we are still on the homepage (handles SPA navigation)
         updateSettings();
         if (!isHomepage) return;
 
-        // Look for the feed section
-        const feedSection = document.querySelector('section[role="feed"]');
-        if (feedSection) {
-            removePosts(feedSection);
-        }
+        cleanHomepage(); // Runs globally across the body mutations
     });
 
     activeObserver.observe(document.body, {
@@ -181,10 +188,9 @@ browser.runtime.onMessage.addListener((request) => {
     }
 });
 
-// Run everything
 async function initializeExtension() {
     updateSettings();
-    await reloadExtensionSettings(); // Wait for settings to load
+    await reloadExtensionSettings();
     initGlobalObserver();
 }
 
