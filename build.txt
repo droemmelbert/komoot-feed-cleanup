@@ -1,1 +1,1 @@
-zip -r -FS ./komoot-feed-cleanup.zip * --exclude '*.git*' --exclude 'build.txt' --exclude '.idea' --exclude '__MACOSX'
+zip -r -FS ./komoot-feed-cleanup.zip * --exclude '*.git*' --exclude 'build.txt' --exclude '.idea' --exclude '__MACOSX' --exclude 'README.md'

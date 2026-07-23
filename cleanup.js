@@ -8,9 +8,32 @@ let hideChallenges = true;
 let extensionEnabled = true;
 let activeObserver = null;
 
+const hidePaywallOverlay = () => {
+    const overlay = document.querySelector('[data-paywall-overlay="true"]');
+    const firstButton = overlay?.querySelector('button');
+
+    if (firstButton) {
+        firstButton.click();
+        console.log("Removed paywall overlay.");
+    }
+};
+
+const hidePeakBaggingDialog = () => {
+    for (const dialog of document.querySelectorAll('dialog[open]')) {
+        if (dialog.querySelector('img[src*="/images/peak-bagging/"]')) {
+            const firstButton = dialog.querySelector('button');
+            if (firstButton) {
+                firstButton.click();
+                console.log("Removed peak bagging dialog.");
+            }
+            break;
+        }
+    }
+};
+
 const getIsHomepage = (url) => {
     try {
-        const { pathname } = new URL(url);
+        const {pathname} = new URL(url);
         const homepagePattern = /^\/([a-z]{2}-[a-z]{2}|[a-z]{2})?\/??$/i;
         return homepagePattern.test(pathname);
     } catch (e) {
@@ -59,6 +82,9 @@ function hidePostSafely(post) {
 }
 
 let cleanHomepage = () => {
+    hidePaywallOverlay();
+    hidePeakBaggingDialog();
+
     // 1. Handle Challenges Carousel (checks globally on the page)
     if (hideChallenges) {
         const challengesCarousel = document.querySelector('[data-test-id="challenges-carousel"]');
@@ -159,7 +185,6 @@ let cleanHomepage = () => {
             if (isWhatsNew) {
                 hidePostSafely(post);
                 console.log("Komoot Feed Cleanup Extension: Removed a 'What's New' app feature update.");
-                return;
             }
         }
     });
