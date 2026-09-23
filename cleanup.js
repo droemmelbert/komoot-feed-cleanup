@@ -8,18 +8,31 @@ let hideChallenges = true;
 let redirectToProfile = false;
 let extensionEnabled = true;
 let activeObserver = null;
-let lastObservedURL = "";
 let profileRedirectTriggered = false;
 
-const resetProfileRedirectState = () => {
-    profileRedirectTriggered = false;
-};
+const getProfileUrlFromSavedRoutes = () => {
+    const savedRoutesLink = document.querySelector('a[href*="/saved-routes/"]');
+    const savedRoutesHref = savedRoutesLink?.getAttribute("href")?.trim();
 
-const getProfileUrlFromHead = () => {
-    const ogUrlMeta = document.head?.querySelector('meta[property="og:url"]');
-    const profileUrl = ogUrlMeta?.getAttribute("content")?.trim();
+    if (!savedRoutesHref) {
+        return null;
+    }
 
-    return profileUrl || null;
+    try {
+        const savedRoutesUrl = new URL(savedRoutesHref, window.location.origin);
+        const match = savedRoutesUrl.pathname.match(/^\/(?:(?<locale>[a-z]{2}(?:-[a-z]{2})?)\/)?saved-routes\/(?<id>\d+)\/?$/i);
+
+        if (!match?.groups?.id) {
+            return null;
+        }
+
+        const {locale, id} = match.groups;
+        const profilePath = locale ? `/${locale}/user/${id}` : `/user/${id}`;
+
+        return new URL(profilePath, savedRoutesUrl.origin).href;
+    } catch (error) {
+        return null;
+    }
 };
 
 const attemptProfileRedirect = () => {
@@ -27,7 +40,7 @@ const attemptProfileRedirect = () => {
         return false;
     }
 
-    const profileUrl = getProfileUrlFromHead();
+    const profileUrl = getProfileUrlFromSavedRoutes();
     if (!profileUrl) {
         return false;
     }
@@ -72,13 +85,7 @@ const getIsHomepage = (url) => {
 };
 
 let updateSettings = () => {
-    let currentURL = window.location.href;
-    if (currentURL !== lastObservedURL) {
-        lastObservedURL = currentURL;
-        resetProfileRedirectState();
-    }
-
-    isHomepage = getIsHomepage(currentURL);
+    isHomepage = getIsHomepage(window.location.href);
 };
 
 function reloadExtensionSettings() {
