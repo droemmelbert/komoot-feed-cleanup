@@ -9,6 +9,7 @@ const defaultSettings = {
     hideSuggestedProfiles: true,
     hideWhatsNew: true,
     hideChallenges: true,
+    hideEvents: true,
 };
 
 let isExtensionEnabled = true;

@@ -5,6 +5,7 @@ let hideKomootCollections = true;
 let hideSuggestedProfiles = true;
 let hideWhatsNew = true;
 let hideChallenges = true;
+let hideEvents = true;
 let redirectToProfile = false;
 let extensionEnabled = true;
 let activeObserver = null;
@@ -101,6 +102,30 @@ const hideFamilyPlanDialog = () => {
     }
 };
 
+const hideFamilyPlanBanner = () => {
+    const familyPlanImage = document.querySelector(
+        'img[src*="/images/family-plan/banner-visual.webp"], img[src*="/images/family-plan/banner-visual@2x.webp"]'
+    );
+    const familyPlanLink = document.querySelector('a[href*="/family-plan"]');
+
+    const bannerRoot = familyPlanImage?.closest('div')?.parentElement?.parentElement ||
+        familyPlanLink?.closest('div')?.parentElement?.parentElement;
+
+    if (bannerRoot && !bannerRoot.hasAttribute("data-kfc-hidden")) {
+        hidePostSafely(bannerRoot);
+        console.log("Komoot Feed Cleanup Extension: Removed family plan banner.");
+    }
+};
+
+const hideHomeTabBar = () => {
+    const tabBar = document.querySelector('[data-test-id="t_home_tab_bar"]');
+
+    if (tabBar && !tabBar.hasAttribute("data-kfc-hidden")) {
+        hidePostSafely(tabBar);
+        console.log("Komoot Feed Cleanup Extension: Removed home tab bar.");
+    }
+};
+
 const getIsHomepage = (url) => {
     try {
         const {pathname} = new URL(url);
@@ -123,6 +148,7 @@ function reloadExtensionSettings() {
         "hideSuggestedProfiles",
         "hideWhatsNew",
         "hideChallenges",
+        "hideEvents",
         "redirectToProfile",
         "extensionEnabled"
     ]).then(settings => {
@@ -132,6 +158,7 @@ function reloadExtensionSettings() {
         hideSuggestedProfiles = settings.hideSuggestedProfiles ?? true;
         hideWhatsNew = settings.hideWhatsNew ?? true;
         hideChallenges = settings.hideChallenges ?? true;
+        hideEvents = settings.hideEvents ?? true;
         redirectToProfile = settings.redirectToProfile ?? false;
         extensionEnabled = settings.extensionEnabled !== false;
 
@@ -160,6 +187,16 @@ let cleanHomepage = () => {
     hidePaywallOverlay();
     hidePeakBaggingDialog();
     hideFamilyPlanDialog();
+    hideFamilyPlanBanner();
+    hideHomeTabBar();
+
+    if (hideEvents) {
+        const homeEventsSection = document.querySelector('[data-test-id="t_home_feed_public_events"]');
+        if (homeEventsSection && !homeEventsSection.hasAttribute("data-kfc-hidden")) {
+            hidePostSafely(homeEventsSection);
+            console.log("Komoot Feed Cleanup Extension: Removed home events section.");
+        }
+    }
 
     // 1. Handle Challenges Carousel (checks globally on the page)
     if (hideChallenges) {

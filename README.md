@@ -9,6 +9,7 @@ A Firefox extension to adjust what you see on the home feed, with the option of 
 - Remove Komoot collections
 - Remove suggested profiles
 - Remove challenges
+- Remove events
 - Remove "what's new" posts
 - Redirect from the homepage to your profile page automatically
 
