@@ -74,6 +74,33 @@ const hidePeakBaggingDialog = () => {
     }
 };
 
+const hideFamilyPlanDialog = () => {
+    for (const dialog of document.querySelectorAll('dialog[open]')) {
+        const hasFamilyPlanArtwork = Boolean(dialog.querySelector('img[src*="/images/paywalls/family-plan/"]'));
+        const dialogText = dialog.textContent?.toLowerCase() || "";
+        const looksLikeFamilyPlanDialog = hasFamilyPlanArtwork ||
+            dialogText.includes("family plan") ||
+            dialogText.includes("bring deine touren zum leben") ||
+            dialogText.includes("premium family plan");
+
+        if (!looksLikeFamilyPlanDialog) {
+            continue;
+        }
+
+        const closeButton =
+            dialog.querySelector('button[aria-label="Schließen"]') ||
+            dialog.querySelector('button[aria-label="Close"]') ||
+            dialog.querySelector('button');
+
+        if (closeButton) {
+            closeButton.click();
+            console.log("Removed family plan dialog.");
+        }
+
+        break;
+    }
+};
+
 const getIsHomepage = (url) => {
     try {
         const {pathname} = new URL(url);
@@ -132,6 +159,7 @@ let cleanHomepage = () => {
 
     hidePaywallOverlay();
     hidePeakBaggingDialog();
+    hideFamilyPlanDialog();
 
     // 1. Handle Challenges Carousel (checks globally on the page)
     if (hideChallenges) {
