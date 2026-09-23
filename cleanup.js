@@ -5,8 +5,38 @@ let hideKomootCollections = true;
 let hideSuggestedProfiles = true;
 let hideWhatsNew = true;
 let hideChallenges = true;
+let redirectToProfile = false;
 let extensionEnabled = true;
 let activeObserver = null;
+let lastObservedURL = "";
+let profileRedirectTriggered = false;
+
+const resetProfileRedirectState = () => {
+    profileRedirectTriggered = false;
+};
+
+const getProfileUrlFromHead = () => {
+    const ogUrlMeta = document.head?.querySelector('meta[property="og:url"]');
+    const profileUrl = ogUrlMeta?.getAttribute("content")?.trim();
+
+    return profileUrl || null;
+};
+
+const attemptProfileRedirect = () => {
+    if (!redirectToProfile || !isHomepage || profileRedirectTriggered) {
+        return false;
+    }
+
+    const profileUrl = getProfileUrlFromHead();
+    if (!profileUrl) {
+        return false;
+    }
+
+    profileRedirectTriggered = true;
+    window.location.assign(profileUrl);
+    console.log(`Komoot Feed Cleanup Extension: Redirecting to profile page: ${profileUrl}`);
+    return true;
+};
 
 const hidePaywallOverlay = () => {
     const overlay = document.querySelector('[data-paywall-overlay="true"]');
@@ -43,6 +73,11 @@ const getIsHomepage = (url) => {
 
 let updateSettings = () => {
     let currentURL = window.location.href;
+    if (currentURL !== lastObservedURL) {
+        lastObservedURL = currentURL;
+        resetProfileRedirectState();
+    }
+
     isHomepage = getIsHomepage(currentURL);
 };
 
@@ -54,6 +89,7 @@ function reloadExtensionSettings() {
         "hideSuggestedProfiles",
         "hideWhatsNew",
         "hideChallenges",
+        "redirectToProfile",
         "extensionEnabled"
     ]).then(settings => {
         hideSponsored = settings.hideSponsored ?? true;
@@ -62,6 +98,7 @@ function reloadExtensionSettings() {
         hideSuggestedProfiles = settings.hideSuggestedProfiles ?? true;
         hideWhatsNew = settings.hideWhatsNew ?? true;
         hideChallenges = settings.hideChallenges ?? true;
+        redirectToProfile = settings.redirectToProfile ?? false;
         extensionEnabled = settings.extensionEnabled !== false;
 
         if (extensionEnabled && isHomepage) {
@@ -82,6 +119,10 @@ function hidePostSafely(post) {
 }
 
 let cleanHomepage = () => {
+    if (attemptProfileRedirect()) {
+        return;
+    }
+
     hidePaywallOverlay();
     hidePeakBaggingDialog();
 

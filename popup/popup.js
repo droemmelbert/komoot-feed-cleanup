@@ -1,6 +1,15 @@
 const checkboxes = document.querySelectorAll('input[type="checkbox"][data-setting]');
 const powerButton = document.getElementById("powerButton");
 const settingsGroup = document.getElementById("settingsGroup");
+const defaultSettings = {
+    redirectToProfile: false,
+    hideSponsored: true,
+    hideKomootCollections: true,
+    hideRegional: true,
+    hideSuggestedProfiles: true,
+    hideWhatsNew: true,
+    hideChallenges: true,
+};
 
 let isExtensionEnabled = true;
 
@@ -48,7 +57,7 @@ checkboxes.forEach((checkbox) => {
     const key = checkbox.dataset.setting;
 
     browser.storage.sync.get(key).then((data) => {
-        checkbox.checked = data[key] ?? true;
+        checkbox.checked = data[key] ?? defaultSettings[key] ?? true;
     });
 
     checkbox.addEventListener("change", async () => {

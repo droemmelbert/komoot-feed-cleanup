@@ -10,6 +10,7 @@ A Firefox extension to adjust what you see on the home feed, with the option of 
 - Remove suggested profiles
 - Remove challenges
 - Remove "what's new" posts
+- Redirect from the homepage to your profile page automatically
 
 **Usage**
 - Click the extension icon and toggle the item types you want hidden.
